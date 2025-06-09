@@ -161,8 +161,8 @@ const data = {
   ],
   dashboard: [
     {
-      name: "Design Engineering",
-      url: "#",
+      name: "Dashboard",
+      url: "dashboard",
       icon: PieChart,
     },
   ],
@@ -175,7 +175,7 @@ const data = {
       <TeamSwitcher :teams="data.teams" />
     </SidebarHeader>
     <SidebarContent>
-      <NavDasboard :projects="data.dashboard" />
+      <NavDasboard :dashboard="data.dashboard" />
       <NavMain :items="data.navMain" />
       <NavProjects :projects="data.projects" />
     </SidebarContent>
