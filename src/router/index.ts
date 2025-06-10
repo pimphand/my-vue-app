@@ -4,6 +4,7 @@ import HistoryView from '../views/HistoryView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import { authMiddleware } from './middleware/auth'
 import AbsensiView from '@/views/absen/AbsensiView.vue'
+import ProductView from '@/views/product/ProductView.vue'
 
 
 const router = createRouter({
@@ -40,7 +41,20 @@ const router = createRouter({
       name: 'absensi',
       component: AbsensiView,
       meta: { public: false }
-    }
+    },
+    //product
+    {
+      path: '/products',
+      name: 'products',
+      component: ProductView,
+      meta: { public: false }
+    },
+    {
+      path: '/products/:id',
+      name: 'product-detail',
+      component: () => import('@/views/product/ProductDetailView.vue'),
+      meta: { public: false }
+    },
   ]
 })
 

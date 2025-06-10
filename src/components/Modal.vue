@@ -31,11 +31,28 @@ const emit = defineEmits<{
 }>();
 </script>
 
+<style scoped>
+.dialog-content {
+  max-height: 80vh;
+  overflow-y: auto;
+  width: 100%;
+  border-radius: 0.5rem;
+  background-color: var(--background);
+  box-shadow: var(--shadow);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.dialog-header {
+  padding: 1.5rem;
+  padding-bottom: 0;
+}
+</style>
+
 <template>
   <Dialog :open="open" @update:open="(value) => emit('update:open', value)">
-    <DialogContent
-      class="sm:max-w-[425px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]"
-    >
+    <DialogContent class="max-w-fit">
       <DialogHeader class="p-6 pb-0">
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription>

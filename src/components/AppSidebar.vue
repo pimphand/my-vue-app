@@ -57,17 +57,17 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Produk",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "/history",
+          title: "List",
+          url: "/products",
         },
         {
-          title: "Dasboard",
+          title: "Kategori",
           url: "/dashboard",
         },
         {
