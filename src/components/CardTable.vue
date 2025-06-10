@@ -182,29 +182,31 @@ const pageNumbers = computed(() => {
                 Loading...
               </td>
             </tr>
-            <tr v-else-if="data.length === 0" class="bg-background border-b">
-              <td :colspan="columns.length" class="px-6 py-4 text-center">
-                {{ emptyMessage }}
-              </td>
-            </tr>
-            <tr
-              v-for="(item, index) in data"
-              :key="index"
-              class="bg-background border-b hover:bg-muted/50"
-            >
-              <td
-                v-for="column in columns"
-                :key="column.key"
-                :class="[
-                  'px-6 py-4',
-                  column.align ? `text-${column.align}` : 'text-left',
-                ]"
+            <template v-else>
+              <tr v-if="data.length === 0" class="bg-background border-b">
+                <td :colspan="columns.length" class="px-6 py-4 text-center">
+                  {{ emptyMessage }}
+                </td>
+              </tr>
+              <tr
+                v-for="(item, index) in data"
+                :key="index"
+                class="bg-background border-b hover:bg-muted/50"
               >
-                <slot :name="column.key" :item="item" :index="index">
-                  {{ item[column.key] }}
-                </slot>
-              </td>
-            </tr>
+                <td
+                  v-for="column in columns"
+                  :key="column.key"
+                  :class="[
+                    'px-6 py-4',
+                    column.align ? `text-${column.align}` : 'text-left',
+                  ]"
+                >
+                  <slot :name="column.key" :item="item" :index="index">
+                    {{ item[column.key] }}
+                  </slot>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>

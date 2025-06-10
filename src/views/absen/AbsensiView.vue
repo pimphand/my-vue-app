@@ -23,6 +23,7 @@ import { MapIcon, PencilIcon, Trash2 } from "lucide-vue-next";
 import ButtonTooltip from "@/components/button/ButtonTooltip.vue";
 import Modal from "@/components/Modal.vue";
 import CardTable from "@/components/CardTable.vue";
+import { Badge } from "@/components/ui/badge";
 
 interface Absensi {
   id: number;
@@ -63,13 +64,17 @@ const columns = [
   { key: "date", label: "Hari" } as const,
   { key: "time", label: "Jam" } as const,
   { key: "location", label: "Lokasi" } as const,
+  { key: "status_check_in", label: "Status" } as const,
   { key: "actions", label: "Aksi", align: "right" as const },
 ];
 
 const searchFields = [
   { key: "filter[user.name]", label: "Nama", placeholder: "Cari nama..." },
-  { key: "division", label: "Divisi", placeholder: "Cari divisi..." },
-  { key: "date", label: "Tanggal", placeholder: "Cari tanggal..." },
+  {
+    key: "filter[user.roles.name]",
+    label: "Divisi",
+    placeholder: "Cari divisi...",
+  },
 ];
 
 const absensiData = ref<Absensi[]>([]);
@@ -142,6 +147,21 @@ const openLocationModal = (lat: number, lng: number) => {
   isOpen.value = true;
 };
 
+const getStatusVariant = (
+  status: string
+): "default" | "destructive" | "outline" | "secondary" => {
+  switch (status?.toLowerCase()) {
+    case "Sudah Absen":
+      return "default";
+    case "terlambat":
+      return "destructive";
+    case "tidak hadir":
+      return "destructive";
+    default:
+      return "secondary";
+  }
+};
+
 onMounted(() => {
   fetchAbsensi();
 });
@@ -200,6 +220,18 @@ onMounted(() => {
 
           <template #time="{ item }">
             {{ item.check_in }}
+          </template>
+
+          <template #status_check_in="{ item }">
+            <Badge
+              :variant="getStatusVariant(item.status_check_in)"
+              :class="{
+                'bg-green-500 hover:bg-green-600':
+                  item.status_check_in?.toLowerCase() === 'Sudah Absen',
+              }"
+            >
+              {{ item.status_check_in }}
+            </Badge>
           </template>
 
           <template #location="{ item }">
