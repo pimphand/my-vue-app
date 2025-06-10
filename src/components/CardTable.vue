@@ -18,6 +18,12 @@ interface Column {
   searchable?: boolean;
 }
 
+interface SearchField {
+  key: string;
+  label: string;
+  placeholder?: string;
+}
+
 interface Props {
   title?: string;
   description?: string;
@@ -26,13 +32,11 @@ interface Props {
   loading?: boolean;
   emptyMessage?: string;
   itemsPerPage?: number;
-  searchPlaceholder?: string;
+  searchFields?: SearchField[];
   totalItems?: number;
   currentPage?: number;
-  searchable?: boolean;
-  searchFields?: string[];
   onPageChange?: (page: number) => void;
-  onSearch?: (query: string) => void;
+  onSearch?: (queries: Record<string, string>) => void;
 }
 
 interface SlotProps {
@@ -46,18 +50,36 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   emptyMessage: "Tidak ada data",
   itemsPerPage: 10,
-  searchPlaceholder: "Cari...",
   totalItems: 0,
   currentPage: 1,
-  searchable: true,
   searchFields: () => [],
 });
+
 const emit = defineEmits<{
   (e: "update:currentPage", page: number): void;
-  (e: "search", query: string): void;
+  (e: "search", queries: Record<string, string>): void;
 }>();
 
-const searchQuery = ref("");
+const searchQueries = ref<Record<string, string>>({});
+
+// Initialize search queries for each field
+watch(
+  () => props.searchFields,
+  (fields) => {
+    fields.forEach((field) => {
+      if (!(field.key in searchQueries.value)) {
+        searchQueries.value[field.key] = "";
+      }
+    });
+  },
+  { immediate: true }
+);
+
+const handleSearch = (key: string, value: string) => {
+  searchQueries.value[key] = value;
+  emit("search", searchQueries.value);
+};
+
 const currentPage = ref(props.currentPage);
 
 // Watch for external page changes
@@ -77,14 +99,6 @@ const handlePageChange = (page: number) => {
   currentPage.value = page;
   emit("update:currentPage", page);
   props.onPageChange?.(page);
-};
-
-const handleSearch = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  searchQuery.value = target.value;
-  currentPage.value = 1; // Reset to first page on search
-  emit("update:currentPage", 1);
-  props.onSearch?.(target.value);
 };
 
 // Generate page numbers for pagination
@@ -132,13 +146,15 @@ const pageNumbers = computed(() => {
           <CardTitle>{{ title }}</CardTitle>
           <CardDescription>{{ description }}</CardDescription>
         </div>
-        <div v-if="searchable" class="w-72">
-          <Input
-            type="search"
-            :placeholder="searchPlaceholder"
-            :value="searchQuery"
-            @input="handleSearch"
-          />
+        <div v-if="searchFields.length > 0" class="flex gap-2">
+          <div v-for="field in searchFields" :key="field.key" class="w-48">
+            <Input
+              type="search"
+              :placeholder="field.placeholder || `Cari ${field.label}...`"
+              :value="searchQueries[field.key]"
+              @input="(e: Event) => handleSearch(field.key, (e.target as HTMLInputElement).value)"
+            />
+          </div>
         </div>
       </div>
     </CardHeader>

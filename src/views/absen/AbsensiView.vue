@@ -66,21 +66,30 @@ const columns = [
   { key: "actions", label: "Aksi", align: "right" as const },
 ];
 
-const searchFields = ["name", "division"]; // Fields that can be searched
+const searchFields = [
+  { key: "filter[user.name]", label: "Nama", placeholder: "Cari nama..." },
+  { key: "division", label: "Divisi", placeholder: "Cari divisi..." },
+  { key: "date", label: "Tanggal", placeholder: "Cari tanggal..." },
+];
 
 const absensiData = ref<Absensi[]>([]);
 const loading = ref(true);
 const currentPage = ref(1);
 const totalItems = ref(0);
-const to = ref(1); // This will be used to track the last item index on the current page
-const searchQuery = ref("");
+const to = ref(1);
+const searchQueries = ref<Record<string, string>>({});
 const { get, del } = useFetch();
 
 async function fetchAbsensi() {
   try {
     loading.value = true;
+    const queryParams = new URLSearchParams({
+      page: currentPage.value.toString(),
+      ...searchQueries.value,
+    });
+
     const response = await get<PaginatedResponse>(
-      `/admin/absen?page=${currentPage.value}&search=${searchQuery.value}`
+      `/admin/absen?${queryParams.toString()}`
     );
     absensiData.value = response.data as unknown as Absensi[];
     totalItems.value = (response as any).meta.total;
@@ -94,13 +103,13 @@ async function fetchAbsensi() {
 }
 
 const handlePageChange = (page: number) => {
-  console.log("Changing to page:", page); // Debug log
+  console.log("Changing to page:", page);
   currentPage.value = page;
   fetchAbsensi();
 };
 
-const handleSearch = (query: string) => {
-  searchQuery.value = query;
+const handleSearch = (queries: Record<string, string>) => {
+  searchQueries.value = queries;
   currentPage.value = 1;
   fetchAbsensi();
 };
@@ -169,12 +178,11 @@ onMounted(() => {
           :current-page="currentPage"
           :total-items="totalItems"
           :items-per-page="25"
-          :searchable="true"
           :search-fields="searchFields"
           @update:current-page="handlePageChange"
           @search="handleSearch"
         >
-          <template #index="{ item, index }">
+          <template #index="{ index }">
             {{ to + index }}
           </template>
 
