@@ -1,4 +1,7 @@
 import { defineStore } from 'pinia'
+import { toast } from 'vue-sonner'
+
+const API_URL = import.meta.env.VITE_API_URL
 
 interface User {
   id: number
@@ -27,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(credentials: LoginCredentials) {
       try {
-        const response = await fetch('https://absensi.dmpt.my.id/api/login', {
+        const response = await fetch(`${API_URL}/api/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,11 +67,37 @@ export const useAuthStore = defineStore('auth', {
       this.isAuthenticated = true
     },
 
-    logout() {
-      this.user = null
-      this.token = null
-      this.isAuthenticated = false
-      localStorage.removeItem('token')
+    async logout() {
+      try {
+        const response = await fetch(`${API_URL}/api/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Logout failed')
+        }
+
+        // Clear local state regardless of API response
+        this.user = null
+        this.token = null
+        this.isAuthenticated = false
+        localStorage.removeItem('token')
+        toast.success("Terima kasih!", {
+          description: "Anda berhasil keluar dari akun Anda.",
+        });
+      } catch (error) {
+        console.error('Logout error:', error)
+        // Still clear local state even if API call fails
+        this.user = null
+        this.token = null
+        this.isAuthenticated = false
+        localStorage.removeItem('token')
+      }
     }
   },
 

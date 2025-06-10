@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "vue-sonner";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
@@ -36,6 +37,9 @@ const handleSubmit = async (e: Event) => {
     await authStore.login({
       username: username.value,
       password: password.value,
+    });
+    toast.success("Selamat datang kembali!", {
+      description: "Anda berhasil masuk ke akun Anda.",
     });
     router.push("/dashboard");
   } catch (err) {

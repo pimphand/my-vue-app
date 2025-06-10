@@ -144,8 +144,8 @@ const data = {
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
+      name: "Absensi",
+      url: "absensi",
       icon: Frame,
     },
     {

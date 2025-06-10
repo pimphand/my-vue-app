@@ -3,10 +3,19 @@ import DashboardView from '../views/DashboardView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import { authMiddleware } from './middleware/auth'
+import AbsensiView from '@/views/absen/AbsensiView.vue'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+   //auth
+   {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { public: true }
+    },
     {
       path: '/',
       name: 'home',
@@ -25,12 +34,12 @@ const router = createRouter({
       component: HistoryView,
       meta: { public: false }
     },
-    //auth
+    //absensi
     {
-      path: '/login',
-      name: 'login',
-      component: LoginView,
-      meta: { public: true }
+      path: '/absensi',
+      name: 'absensi',
+      component: AbsensiView,
+      meta: { public: false }
     }
   ]
 })
