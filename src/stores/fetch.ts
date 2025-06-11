@@ -25,17 +25,25 @@ export const useFetch = () => {
   const getAuthHeaders = (customHeaders: Record<string, string> = {}, isFormData: boolean = false) => {
     const token = localStorage.getItem('token');
     return {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(isFormData ? {} : { 'Content-Type': 'application/json', 'Accept' : 'application/json' }),
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...customHeaders,
     };
   };
 
   const handleResponse = async <T>(response: Response): Promise<ResponseData<T>> => {
+    if(response.status == 401) {
+      toast.error('Akses tidak sah, silakan masuk kembali');
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      throw new FetchError(response.status, 'Unauthorized access, please log in again');
+    }
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'An error occurred' }));
       throw new FetchError(response.status, error.message);
     }
+
     return response.json();
   };
 

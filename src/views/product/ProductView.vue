@@ -201,10 +201,10 @@ onMounted(() => {
       <div class="flex flex-1 flex-col gap-4 p-4">
         <div class="flex justify-end">
           <button
-            @click="router.push('/products/new')"
+            @click="router.push('/products/create')"
             class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
-            Add New Product
+            Tambah Produk
           </button>
         </div>
         <CardTable
@@ -219,8 +219,6 @@ onMounted(() => {
           @update:current-page="handlePageChange"
           @search="handleSearch"
         >
-          <template #header> </template>
-
           <template #index="{ index }">
             {{ to + index }}
           </template>
@@ -255,12 +253,6 @@ onMounted(() => {
                 description="Detail Product"
                 :icon="FolderKanban"
                 :variant="'outline'"
-              />
-              <ButtonTooltip
-                style="margin-right: 2px"
-                name=""
-                description="Edit Product"
-                :icon="PencilIcon"
               />
               <ButtonTooltip
                 name=""

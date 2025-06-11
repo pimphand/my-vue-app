@@ -57,6 +57,12 @@ const router = createRouter({
       meta: { public: false }
     },
     {
+      path: '/products/create',
+      name: 'product-create',
+      component: () => import('@/views/product/ProductCreateView.vue'),
+      meta: { public: false }
+    },
+    {
       path:'/brands',
       name: 'brands',
       component: Brand,
