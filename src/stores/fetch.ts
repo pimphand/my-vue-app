@@ -20,6 +20,7 @@ class FetchError extends Error {
 
 export const useFetch = () => {
   const baseURL = import.meta.env.VITE_API_URL + '/api';
+  const assetsUrl = import.meta.env.VITE_ASSET_URL;
 
   const getAuthHeaders = (customHeaders: Record<string, string> = {}, isFormData: boolean = false) => {
     const token = localStorage.getItem('token');
@@ -150,6 +151,10 @@ export const useFetch = () => {
     }
   };
 
+  const assetsURL = (path: string) => {
+    return `${assetsUrl}/${path}`;
+  };
+
   return {
     get,
     post,
@@ -157,5 +162,6 @@ export const useFetch = () => {
     del,
     postForm,
     putForm,
+    assetsURL,
   };
 }; 

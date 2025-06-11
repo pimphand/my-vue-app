@@ -5,6 +5,7 @@ import LoginView from '@/views/auth/LoginView.vue'
 import { authMiddleware } from './middleware/auth'
 import AbsensiView from '@/views/absen/AbsensiView.vue'
 import ProductView from '@/views/product/ProductView.vue'
+import Brand from '@/views/product/brand/Brand.vue'
 
 
 const router = createRouter({
@@ -55,6 +56,12 @@ const router = createRouter({
       component: () => import('@/views/product/ProductDetailView.vue'),
       meta: { public: false }
     },
+    {
+      path:'/brands',
+      name: 'brands',
+      component: Brand,
+      meta: { public: false }
+    }
   ]
 })
 

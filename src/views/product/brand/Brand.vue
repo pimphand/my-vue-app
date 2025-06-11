@@ -24,22 +24,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 import { FolderKanban, PencilIcon, Trash2 } from "lucide-vue-next";
 import ButtonTooltip from "@/components/button/ButtonTooltip.vue";
 import CardTable from "@/components/CardTable.vue";
 import { Badge } from "@/components/ui/badge";
-import Accordion from "@/components/Accordion.vue";
 
-interface Product {
+interface Brand {
   id: string;
   category_id: string;
   name: string;
@@ -61,7 +52,7 @@ interface Product {
   };
   skus: Array<{
     id: string;
-    product_id: string;
+    Brand_id: string;
     name: string;
     code: string;
     price: number | null;
@@ -83,7 +74,7 @@ interface Product {
 }
 
 interface PaginatedResponse {
-  data: Product[];
+  data: Brand[];
   meta: {
     current_page: number;
     total: number;
@@ -94,9 +85,8 @@ interface PaginatedResponse {
 
 const columns = [
   { key: "index", label: "#", width: "100px" } as const,
-  { key: "name", label: "Nama Produk", searchable: true } as const,
-  { key: "category", label: "Kategori", searchable: true } as const,
-  { key: "skus", label: "Jumlah SKU" } as const,
+  { key: "name", label: "Nama Brand", searchable: true } as const,
+  { key: "image", label: "Gambar", searchable: false } as const,
   { key: "status", label: "Status" } as const,
   { key: "actions", label: "Aksi", align: "right" } as const,
 ];
@@ -104,26 +94,21 @@ const columns = [
 const searchFields = [
   {
     key: "filter[name]",
-    label: "Nama Produk",
-    placeholder: "Cari nama produk...",
-  },
-  {
-    key: "filter[category.name]",
-    label: "Kategori",
-    placeholder: "Cari kategori...",
+    label: "Nama Brand",
+    placeholder: "Cari nama Brand...",
   },
 ];
 
-const ProductData = ref<Product[]>([]);
+const BrandData = ref<Brand[]>([]);
 const loading = ref(true);
 const currentPage = ref(1);
 const totalItems = ref(0);
 const to = ref(1);
 const searchQueries = ref<Record<string, string>>({});
-const { get, del } = useFetch();
+const { get, del, assetsURL } = useFetch();
 const router = useRouter();
 
-async function fetchProduct() {
+async function fetchBrand() {
   try {
     loading.value = true;
     const queryParams = new URLSearchParams({
@@ -132,14 +117,14 @@ async function fetchProduct() {
     });
 
     const response = await get<PaginatedResponse>(
-      `/admin/products?${queryParams.toString()}`
+      `/admin/brands?${queryParams.toString()}`
     );
-    ProductData.value = response.data as unknown as Product[];
+    BrandData.value = response.data as unknown as Brand[];
     totalItems.value = (response as any).meta.total;
     to.value = (response as any).meta.from;
   } catch (error) {
-    toast.error("Gagal mengambil data Product!");
-    console.error("Error fetching Product:", error);
+    toast.error("Gagal mengambil data Brand!");
+    console.error("Error fetching Brand:", error);
   } finally {
     loading.value = false;
   }
@@ -148,31 +133,27 @@ async function fetchProduct() {
 const handlePageChange = (page: number) => {
   console.log("Changing to page:", page);
   currentPage.value = page;
-  fetchProduct();
+  fetchBrand();
 };
 
 const handleSearch = (queries: Record<string, string>) => {
   searchQueries.value = queries;
   currentPage.value = 1;
-  fetchProduct();
+  fetchBrand();
 };
 
-async function deleteProduct(id: string) {
+async function deleteBrand(id: string) {
   try {
-    await del(`/admin/products/${id}`);
-    toast.success("Data Product berhasil dihapus");
-    await fetchProduct(); // Refresh data after deletion
+    await del(`/admin/Brands/${id}`);
+    toast.success("Data Brand berhasil dihapus");
+    await fetchBrand(); // Refresh data after deletion
   } catch (error) {
-    console.error("Error deleting Product:", error);
+    console.error("Error deleting Brand:", error);
   }
 }
 
-const openProductDetails = (product: Product) => {
-  router.push(`/products/${product.id}`);
-};
-
 onMounted(() => {
-  fetchProduct();
+  fetchBrand();
 });
 </script>
 <template>
@@ -192,7 +173,7 @@ onMounted(() => {
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Product</BreadcrumbPage>
+                <BreadcrumbPage>Brand</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -201,16 +182,16 @@ onMounted(() => {
       <div class="flex flex-1 flex-col gap-4 p-4">
         <div class="flex justify-end">
           <button
-            @click="router.push('/products/new')"
+            @click="router.push('/Brands/new')"
             class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
-            Add New Product
+            Tambah Brand
           </button>
         </div>
         <CardTable
-          title="List Product"
+          title="List Brand"
           :columns="columns"
-          :data="ProductData"
+          :data="BrandData"
           :loading="loading"
           :current-page="currentPage"
           :total-items="totalItems"
@@ -219,8 +200,6 @@ onMounted(() => {
           @update:current-page="handlePageChange"
           @search="handleSearch"
         >
-          <template #header> </template>
-
           <template #index="{ index }">
             {{ to + index }}
           </template>
@@ -228,12 +207,9 @@ onMounted(() => {
           <template #name="{ item }">
             {{ item.name }}
           </template>
-
-          <template #category="{ item }">
-            {{ item.category.name }}
+          <template #image="{ item }">
+            <img :src="assetsURL(item.logo)" width="50px" alt="" />
           </template>
-
-          <template #skus="{ item }"> {{ item.skus_count }} SKU </template>
 
           <template #status="{ item }">
             <Badge
@@ -251,23 +227,15 @@ onMounted(() => {
               <ButtonTooltip
                 style="margin-right: 2px"
                 name=""
-                @click="openProductDetails(item)"
-                description="Detail Product"
-                :icon="FolderKanban"
-                :variant="'outline'"
-              />
-              <ButtonTooltip
-                style="margin-right: 2px"
-                name=""
-                description="Edit Product"
+                description="Edit Brand"
                 :icon="PencilIcon"
               />
               <ButtonTooltip
                 name=""
-                description="delete Product"
+                description="delete Brand"
                 :icon="Trash2"
                 variant="destructive"
-                @click="deleteProduct(item.id)"
+                @click="deleteBrand(item.id)"
               />
             </div>
           </template>

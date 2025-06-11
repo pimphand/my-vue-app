@@ -71,8 +71,8 @@ const data = {
           url: "/dashboard",
         },
         {
-          title: "Settings",
-          url: "#",
+          title: "Brand",
+          url: "/Brands",
         },
       ],
     },
