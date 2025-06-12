@@ -13,7 +13,7 @@ import {
   Settings2,
   SquareTerminal,
 } from "lucide-vue-next";
-import NavMain from "@/components/NavMain.vue";
+import NavMain from "@/components/navbar/NavMain.vue";
 import NavProjects from "@/components/navbar/NavProjects.vue";
 import NavUser from "@/components/navbar/NavUser.vue";
 import NavDasboard from "@/components/navbar/NavDashboard.vue";
@@ -77,23 +77,9 @@ const data = {
       ],
     },
     {
-      title: "Models",
-      url: "#",
+      title: "Orders",
+      url: "/orders",
       icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
     },
     {
       title: "Documentation",

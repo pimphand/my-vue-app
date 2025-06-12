@@ -15,7 +15,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
+
+const route = useRoute();
 
 defineProps<{
   items: {
@@ -45,23 +47,31 @@ defineProps<{
         <SidebarMenuItem>
           <CollapsibleTrigger as-child>
             <RouterLink :to="item.url" custom v-slot="{ navigate }">
-              <SidebarMenuButton :tooltip="item.title" @click="navigate">
+              <SidebarMenuButton
+                :tooltip="item.title"
+                @click="navigate"
+                :class="{ active: route.path === item.url }"
+              >
                 <component :is="item.icon" v-if="item.icon" />
                 <span>{{ item.title }}</span>
                 <ChevronRight
+                  v-if="item.items"
                   class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
                 />
               </SidebarMenuButton>
             </RouterLink>
           </CollapsibleTrigger>
-          <CollapsibleContent>
+          <CollapsibleContent v-if="item.items">
             <SidebarMenuSub>
               <SidebarMenuSubItem
                 v-for="subItem in item.items"
                 :key="subItem.title"
               >
                 <SidebarMenuSubButton as-child>
-                  <RouterLink :to="subItem.url">
+                  <RouterLink
+                    :to="subItem.url"
+                    :class="{ active: route.path === subItem.url }"
+                  >
                     <span>{{ subItem.title }}</span>
                   </RouterLink>
                 </SidebarMenuSubButton>

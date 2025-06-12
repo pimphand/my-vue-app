@@ -6,6 +6,8 @@ import { authMiddleware } from './middleware/auth'
 import AbsensiView from '@/views/absen/AbsensiView.vue'
 import ProductView from '@/views/product/ProductView.vue'
 import Brand from '@/views/product/brand/Brand.vue'
+import OrderView from '@/views/order/OrderView.vue'
+import OrderDetailView from '@/views/order/OrderDetailView.vue'
 
 
 const router = createRouter({
@@ -66,6 +68,17 @@ const router = createRouter({
       path:'/brands',
       name: 'brands',
       component: Brand,
+      meta: { public: false }
+    }, {
+      path: '/orders',
+      name: 'orders',
+      component: OrderView,
+      meta: { public: false }
+    },
+    {
+      path: '/orders/:id',
+      name: 'order-detail',
+      component: OrderDetailView,
       meta: { public: false }
     }
   ]

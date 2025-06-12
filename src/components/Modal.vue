@@ -15,6 +15,7 @@ interface Props {
   submitText?: string;
   showFooter?: boolean;
   open?: boolean;
+  width?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -23,6 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
   submitText: "Save changes",
   showFooter: true,
   open: false,
+  width: "max-w-fit",
 });
 
 const emit = defineEmits<{
@@ -52,7 +54,7 @@ const emit = defineEmits<{
 
 <template>
   <Dialog :open="open" @update:open="(value) => emit('update:open', value)">
-    <DialogContent class="max-w-fit">
+    <DialogContent :class="width">
       <DialogHeader class="p-6 pb-0">
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription>

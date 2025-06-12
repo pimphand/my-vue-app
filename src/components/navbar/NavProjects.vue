@@ -6,7 +6,7 @@ import {
   MoreHorizontal,
   Trash2,
 } from "lucide-vue-next";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 
 import {
   DropdownMenu,
@@ -34,6 +34,11 @@ defineProps<{
 }>();
 
 const { isMobile } = useSidebar();
+const route = useRoute();
+
+const isActive = (url: string) => {
+  return route.path === url;
+};
 </script>
 
 <template>
@@ -42,7 +47,10 @@ const { isMobile } = useSidebar();
     <SidebarMenu>
       <SidebarMenuItem v-for="item in projects" :key="item.name">
         <SidebarMenuButton as-child>
-          <RouterLink :to="item.url">
+          <RouterLink
+            :to="item.url"
+            :class="{ 'text-primary font-medium': isActive(item.url) }"
+          >
             <component :is="item.icon" />
             <span>{{ item.name }}</span>
           </RouterLink>

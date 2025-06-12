@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+
 import { toast } from "vue-sonner";
 import AppSidebar from "@/components/AppSidebar.vue";
 import { useFetch } from "@/stores/fetch";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-vue-next";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -64,6 +67,7 @@ interface Product {
 }
 
 const route = useRoute();
+const router = useRouter();
 const product = ref<Product | null>(null);
 const loading = ref(true);
 const { get } = useFetch();
@@ -74,6 +78,10 @@ const editedSku = ref<{
   price: number | null;
   stock: number | null;
 } | null>(null);
+
+const goBack = () => {
+  router.back();
+};
 
 async function fetchProductDetail() {
   try {
@@ -166,9 +174,16 @@ onMounted(() => {
         </div>
       </header>
       <div class="flex flex-1 flex-col gap-4 p-4">
+        <div class="flex items-center gap-4 mb-4">
+          <Button variant="outline" @click="goBack">
+            <ArrowLeft class="w-4 h-4 mr-2" />
+            Kembali
+          </Button>
+        </div>
         <div v-if="loading" class="flex justify-center items-center h-64">
           Loading...
         </div>
+
         <div v-else-if="product" class="space-y-6">
           <div class="bg-white rounded-lg shadow p-6">
             <h1 class="text-2xl font-bold mb-4">{{ product.name }}</h1>
