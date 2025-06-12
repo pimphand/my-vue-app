@@ -94,7 +94,7 @@ interface Order {
       name: string;
       display_name: string;
     };
-  };
+  } | null;
   collector: {
     id: number;
     name: string;
@@ -103,7 +103,7 @@ interface Order {
       name: string;
       display_name: string;
     };
-  };
+  } | null;
   items: OrderItem[];
   payments: Payment[];
   quantity: number;
@@ -119,6 +119,7 @@ interface Order {
   updated_at: string;
   discount?: number;
   is_percentage?: boolean;
+  type_discount?: boolean;
 }
 
 const route = useRoute();
@@ -136,6 +137,7 @@ const editedOrder = ref<{
   collector_id: number;
   discount?: number;
   is_percentage?: boolean;
+  type_discount?: boolean;
 } | null>(null);
 
 const editedItems = ref<{
@@ -144,6 +146,7 @@ const editedItems = ref<{
     price: number;
     discount: number;
     is_percentage: boolean;
+    type_discount?: boolean;
   };
 }>({});
 
@@ -188,9 +191,9 @@ async function fetchUsers() {
     console.log("Driver Users:", driverResponse.data);
     console.log("Collector Users:", collectorResponse.data);
 
-    salesUsers.value = salesResponse.data;
-    driverUsers.value = driverResponse.data;
-    collectorUsers.value = collectorResponse.data;
+    salesUsers.value = salesResponse.data.data;
+    driverUsers.value = driverResponse.data.data;
+    collectorUsers.value = collectorResponse.data.data;
   } catch (error) {
     toast.error("Gagal mengambil data pengguna!");
     console.error("Error fetching users:", error);
@@ -201,9 +204,8 @@ function startEditing() {
   if (order.value) {
     editedOrder.value = {
       sales_id: order.value.sales.id,
-      shipper_id: order.value.shipper.id,
-      collector_id: order.value.collector.id,
-      type: "edit-customer",
+      shipper_id: order.value.shipper?.id ?? 0,
+      collector_id: order.value.collector?.id ?? 0,
     };
     isEditing.value = true;
   }
@@ -234,7 +236,6 @@ async function saveEditing() {
 
 function startEditingAllItems() {
   if (!order.value) return;
-  console.log("Starting to edit items:", order.value.items);
 
   const newEditedItems: { [key: string]: any } = {};
   order.value.items.forEach((item) => {
@@ -250,8 +251,8 @@ function startEditingAllItems() {
   // Initialize editedOrder with current order's discount values
   editedOrder.value = {
     sales_id: order.value.sales.id,
-    shipper_id: order.value.shipper.id,
-    collector_id: order.value.collector.id,
+    shipper_id: order.value.shipper?.id ?? 0,
+    collector_id: order.value.collector?.id ?? 0,
   };
 
   console.log("Setting edited items:", newEditedItems);
@@ -275,7 +276,7 @@ async function saveAllItemChanges() {
     // Save all item changes
     const updates = Object.entries(editedItems.value).map(
       ([itemId, editedItem]) => {
-        return put(`/admin/orders/${order.value.id}/items/${itemId}`, {
+        return put(`/admin/orders/items/${itemId}`, {
           quantity: editedItem.quantity,
           price: editedItem.price,
           discount: editedItem.discount,
@@ -289,35 +290,16 @@ async function saveAllItemChanges() {
       updates.push(
         put(`/admin/orders/${order.value.id}`, {
           discount: editedOrder.value.discount,
-          is_percentage: editedOrder.value.is_percentage,
+          type_discount: editedOrder.value.type_discount,
+          type: "update-discount",
         })
       );
     }
 
-    const responses = await Promise.all(updates);
+    await Promise.all(updates);
 
-    // Update all items in the order
-    responses.forEach((response) => {
-      if (response.data.id) {
-        // This is an item update
-        const itemIndex = order.value.items.findIndex(
-          (i) => i.id === response.data.id
-        );
-        if (itemIndex !== -1) {
-          order.value.items[itemIndex] = {
-            ...order.value.items[itemIndex],
-            ...response.data,
-            total: calculateItemTotal(response.data),
-          };
-        }
-      } else {
-        // This is the order update
-        order.value = {
-          ...order.value,
-          ...response.data,
-        };
-      }
-    });
+    // Fetch fresh data after saving
+    await fetchOrderDetail();
 
     editedItems.value = {};
     editedOrder.value = null;
@@ -360,20 +342,34 @@ function calculateItemTotal(item: OrderItem) {
   return total;
 }
 
+function calculateOrderTotalBeforeDiscount() {
+  if (!order.value) return 0;
+
+  // Calculate total from all items without applying discount
+  return order.value.items.reduce((total, item) => {
+    let itemTotal = item.quantity * item.price;
+    if (item.discount && item.discount > 0) {
+      if (item.is_percentage) {
+        itemTotal = itemTotal * (1 - item.discount / 100);
+      } else {
+        itemTotal = itemTotal - item.discount;
+      }
+    }
+    return total + itemTotal;
+  }, 0);
+}
+
 function calculateOrderTotal() {
   if (!order.value) return 0;
 
-  // Calculate total from all items first
-  let total = order.value.items.reduce((total, item) => {
-    return total + calculateItemTotal(item);
-  }, 0);
+  // Get total before discount
+  let total = calculateOrderTotalBeforeDiscount();
 
   // Apply order-level discount if exists
-  const discount = editedOrder.value?.discount ?? order.value.discount;
-  const isPercentage =
-    editedOrder.value?.is_percentage ?? order.value.is_percentage;
+  const discount = order.value.discount || 0;
+  const isPercentage = order.value.type_discount;
 
-  if (discount) {
+  if (discount > 0) {
     if (isPercentage) {
       total = total * (1 - discount / 100);
     } else {
@@ -531,7 +527,7 @@ onMounted(() => {
                     />
                   </template>
                   <template v-else>
-                    {{ order.shipper.name }}
+                    {{ order.shipper?.name ?? "Belum ditentukan" }}
                   </template>
                 </p>
               </div>
@@ -558,7 +554,7 @@ onMounted(() => {
                     />
                   </template>
                   <template v-else>
-                    {{ order.collector.name }}
+                    {{ order.collector?.name ?? "Belum ditentukan" }}
                   </template>
                 </p>
                 <p>
@@ -691,7 +687,7 @@ onMounted(() => {
                       <label class="flex items-center gap-1">
                         <input
                           type="checkbox"
-                          v-model="editedOrder.is_percentage"
+                          v-model="editedOrder.type_discount"
                         />
                         <span class="text-sm">%</span>
                       </label>
@@ -701,9 +697,12 @@ onMounted(() => {
                     <span class="text font-semibold">
                       {{
                         order.discount
-                          ? order.is_percentage
-                            ? `${order.discount}%`
-                            : formatCurrency(order.discount)
+                          ? order.type_discount
+                            ? `${formatCurrency(
+                                calculateOrderTotalBeforeDiscount() *
+                                  (order.discount / 100)
+                              )} (${order.discount}%)`
+                            : `${formatCurrency(order.discount)}`
                           : "-"
                       }}
                     </span>
