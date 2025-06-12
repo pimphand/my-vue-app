@@ -136,8 +136,8 @@ const editedOrder = ref<{
   shipper_id: number;
   collector_id: number;
   discount?: number;
-  is_percentage?: boolean;
   type_discount?: boolean;
+  type?: string;
 } | null>(null);
 
 const editedItems = ref<{
@@ -169,7 +169,9 @@ async function fetchOrderDetail() {
     const response = await get<{ data: Order }>(
       `/admin/orders/${route.params.id}`
     );
+    console.log("Order Response:", response);
     order.value = response.data;
+    console.log("Order Data:", order.value);
   } catch (error) {
     toast.error("Gagal mengambil detail Order!");
     console.error("Error fetching Order detail:", error);
@@ -187,13 +189,13 @@ async function fetchUsers() {
         get<{ data: User[] }>("/admin/users?filter[roles.name]=debt-collector"),
       ]);
 
-    console.log("Sales Users:", salesResponse.data);
-    console.log("Driver Users:", driverResponse.data);
-    console.log("Collector Users:", collectorResponse.data);
+    salesUsers.value = salesResponse.data;
+    driverUsers.value = driverResponse.data;
+    collectorUsers.value = collectorResponse.data;
 
-    salesUsers.value = salesResponse.data.data;
-    driverUsers.value = driverResponse.data.data;
-    collectorUsers.value = collectorResponse.data.data;
+    console.log("Sales Users:", salesUsers.value);
+    console.log("Driver Users:", driverUsers.value);
+    console.log("Collector Users:", collectorUsers.value);
   } catch (error) {
     toast.error("Gagal mengambil data pengguna!");
     console.error("Error fetching users:", error);
@@ -202,11 +204,16 @@ async function fetchUsers() {
 
 function startEditing() {
   if (order.value) {
+    console.log("Starting edit with order:", order.value);
     editedOrder.value = {
       sales_id: order.value.sales.id,
       shipper_id: order.value.shipper?.id ?? 0,
       collector_id: order.value.collector?.id ?? 0,
+      discount: order.value.discount,
+      type_discount: order.value.type_discount,
+      type: "edit-customer",
     };
+    console.log("Edited order set to:", editedOrder.value);
     isEditing.value = true;
   }
 }
@@ -255,10 +262,8 @@ function startEditingAllItems() {
     collector_id: order.value.collector?.id ?? 0,
   };
 
-  console.log("Setting edited items:", newEditedItems);
   editedItems.value = newEditedItems;
   isEditingItems.value = true;
-  console.log("Edit mode activated:", isEditingItems.value);
 }
 
 function cancelEditingAllItems() {
@@ -266,7 +271,6 @@ function cancelEditingAllItems() {
   editedItems.value = {};
   editedOrder.value = null;
   isEditingItems.value = false;
-  console.log("Edit mode deactivated:", isEditingItems.value);
 }
 
 async function saveAllItemChanges() {
@@ -380,9 +384,8 @@ function calculateOrderTotal() {
   return total;
 }
 
-onMounted(() => {
-  fetchOrderDetail();
-  fetchUsers();
+onMounted(async () => {
+  await Promise.all([fetchOrderDetail(), fetchUsers()]);
 });
 </script>
 
@@ -490,12 +493,14 @@ onMounted(() => {
                       :groups="[
                         {
                           label: 'Sales',
-                          options: salesUsers.map((user) => ({
-                            value: user.id,
-                            label: user.name,
-                          })),
+                          options:
+                            salesUsers?.map((user) => ({
+                              value: String(user.id),
+                              label: user.name,
+                            })) || [],
                         },
                       ]"
+                      :default-value="String(order.sales.id)"
                       placeholder="Pilih Sales"
                       class="w-[200px]"
                     />
@@ -516,12 +521,16 @@ onMounted(() => {
                       :groups="[
                         {
                           label: 'Pengirim',
-                          options: driverUsers.map((user) => ({
-                            value: user.id,
-                            label: user.name,
-                          })),
+                          options:
+                            driverUsers?.map((user) => ({
+                              value: String(user.id),
+                              label: user.name,
+                            })) || [],
                         },
                       ]"
+                      :default-value="
+                        order.shipper ? String(order.shipper.id) : undefined
+                      "
                       placeholder="Pilih Pengirim"
                       class="w-[200px]"
                     />
@@ -543,12 +552,16 @@ onMounted(() => {
                       :groups="[
                         {
                           label: 'Partner Bisnis',
-                          options: collectorUsers.map((user) => ({
-                            value: user.id,
-                            label: user.name,
-                          })),
+                          options:
+                            collectorUsers?.map((user) => ({
+                              value: String(user.id),
+                              label: user.name,
+                            })) || [],
                         },
                       ]"
+                      :default-value="
+                        order.collector ? String(order.collector.id) : undefined
+                      "
                       placeholder="Pilih Partner Bisnis"
                       class="w-[200px]"
                     />
