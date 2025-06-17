@@ -4,7 +4,6 @@ import { toast } from "vue-sonner";
 import { useRouter } from "vue-router";
 import AppSidebar from "@/components/AppSidebar.vue";
 import { useFetch } from "@/stores/fetch";
-import type { Product, PaginatedResponse } from "@/types/product";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,53 +24,79 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 
 import { FolderKanban, PencilIcon, Trash2 } from "lucide-vue-next";
 import ButtonTooltip from "@/components/button/ButtonTooltip.vue";
 import CardTable from "@/components/CardTable.vue";
 import { Badge } from "@/components/ui/badge";
-import Accordion from "@/components/Accordion.vue";
+import CategoryForm from "@/components/category/CategoryForm.vue";
+
+interface Kategori {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PaginatedResponse {
+  data: Kategori[];
+  meta: {
+    current_page: number;
+    total: number;
+    per_page: number;
+    last_page: number;
+  };
+}
 
 const columns = [
   { key: "index", label: "#", width: "100px" } as const,
-  { key: "name", label: "Nama Produk", searchable: true } as const,
-  { key: "category", label: "Kategori", searchable: true } as const,
-  { key: "skus", label: "Jumlah SKU" } as const,
-  { key: "status", label: "Status" } as const,
+  { key: "name", label: "Nama Kategori", searchable: true } as const,
+  { key: "description", label: "Deskripsi", searchable: true } as const,
   { key: "actions", label: "Aksi", align: "right" } as const,
 ];
 
 const searchFields = [
   {
     key: "filter[name]",
-    label: "Nama Produk",
-    placeholder: "Cari nama produk...",
-  },
-  {
-    key: "filter[category.name]",
-    label: "Kategori",
-    placeholder: "Cari kategori...",
+    label: "Nama Kategori",
+    placeholder: "Cari nama Kategori...",
   },
 ];
 
-const ProductData = ref<Product[]>([]);
+const KategoriData = ref<Kategori[]>([]);
 const loading = ref(true);
 const currentPage = ref(1);
 const totalItems = ref(0);
 const to = ref(1);
 const searchQueries = ref<Record<string, string>>({});
-const { get, del } = useFetch();
+const { get, del, assetsURL } = useFetch();
 const router = useRouter();
 
-async function fetchProduct() {
+// Add new refs for modals
+const isCreateModalOpen = ref(false);
+const isEditModalOpen = ref(false);
+const selectedCategory = ref<Kategori | null>(null);
+const isDeleteAlertOpen = ref(false);
+const categoryToDelete = ref<string | null>(null);
+
+const openCreateModal = () => {
+  selectedCategory.value = null;
+  isCreateModalOpen.value = true;
+};
+
+const openEditModal = (category: Kategori) => {
+  selectedCategory.value = category;
+  isEditModalOpen.value = true;
+};
+
+const handleModalSuccess = () => {
+  fetchKategori();
+};
+
+async function fetchKategori() {
   try {
     loading.value = true;
     const queryParams = new URLSearchParams({
@@ -80,14 +105,14 @@ async function fetchProduct() {
     });
 
     const response = await get<PaginatedResponse>(
-      `/admin/products?${queryParams.toString()}`
+      `/admin/categories?${queryParams.toString()}`
     );
-    ProductData.value = response.data as unknown as Product[];
+    KategoriData.value = response.data as unknown as Kategori[];
     totalItems.value = (response as any).meta.total;
     to.value = (response as any).meta.from;
   } catch (error) {
-    toast.error("Gagal mengambil data Product!");
-    console.error("Error fetching Product:", error);
+    toast.error("Gagal mengambil data Kategori!");
+    console.error("Error fetching Kategori:", error);
   } finally {
     loading.value = false;
   }
@@ -96,31 +121,50 @@ async function fetchProduct() {
 const handlePageChange = (page: number) => {
   console.log("Changing to page:", page);
   currentPage.value = page;
-  fetchProduct();
+  fetchKategori();
 };
 
 const handleSearch = (queries: Record<string, string>) => {
   searchQueries.value = queries;
   currentPage.value = 1;
-  fetchProduct();
+  fetchKategori();
 };
 
-async function deleteProduct(id: string) {
+async function deleteKategori(id: string) {
   try {
-    await del(`/admin/products/${id}`);
-    toast.success("Data Product berhasil dihapus");
-    await fetchProduct(); // Refresh data after deletion
+    await del(`/admin/categories/${id}`);
+    toast.success("Data Kategori berhasil dihapus");
+    await fetchKategori(); // Refresh data after deletion
   } catch (error) {
-    console.error("Error deleting Product:", error);
+    toast.success("Data Kategori berhasil dihapus");
+    await fetchKategori(); // Refresh data after deletion
   }
 }
 
-const openProductDetails = (product: Product) => {
-  router.push(`/products/${product.id}`);
+const openDeleteAlert = (id: string) => {
+  categoryToDelete.value = id;
+  isDeleteAlertOpen.value = true;
+};
+
+const handleDeleteConfirm = async () => {
+  if (categoryToDelete.value) {
+    try {
+      await deleteKategori(categoryToDelete.value);
+      categoryToDelete.value = null;
+      isDeleteAlertOpen.value = false;
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+    }
+  }
+};
+
+const handleDeleteCancel = () => {
+  categoryToDelete.value = null;
+  isDeleteAlertOpen.value = false;
 };
 
 onMounted(() => {
-  fetchProduct();
+  fetchKategori();
 });
 </script>
 <template>
@@ -140,7 +184,7 @@ onMounted(() => {
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Product</BreadcrumbPage>
+                <BreadcrumbPage>Kategori</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -149,16 +193,16 @@ onMounted(() => {
       <div class="flex flex-1 flex-col gap-4 p-4">
         <div class="flex justify-end">
           <button
-            @click="router.push('/products/create')"
+            @click="openCreateModal"
             class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
-            Tambah Produk
+            Tambah Kategori
           </button>
         </div>
         <CardTable
-          title="List Product"
+          title="List Kategori"
           :columns="columns"
-          :data="ProductData"
+          :data="KategoriData"
           :loading="loading"
           :current-page="currentPage"
           :total-items="totalItems"
@@ -174,12 +218,9 @@ onMounted(() => {
           <template #name="{ item }">
             {{ item.name }}
           </template>
-
-          <template #category="{ item }">
-            {{ item.category.name }}
+          <template #image="{ item }">
+            <img :src="assetsURL(item.logo)" width="50px" alt="" />
           </template>
-
-          <template #skus="{ item }"> {{ item.skus_count }} SKU </template>
 
           <template #status="{ item }">
             <Badge
@@ -197,21 +238,65 @@ onMounted(() => {
               <ButtonTooltip
                 style="margin-right: 2px"
                 name=""
-                @click="openProductDetails(item)"
-                description="Detail Product"
-                :icon="FolderKanban"
-                :variant="'outline'"
+                description="Edit Kategori"
+                :icon="PencilIcon"
+                @click="openEditModal(item)"
               />
               <ButtonTooltip
+                v-if="item.products_count < 1"
                 name=""
-                description="delete Product"
+                description="delete Kategori"
                 :icon="Trash2"
                 variant="destructive"
-                @click="deleteProduct(item.id)"
+                @click="openDeleteAlert(item.id)"
               />
             </div>
           </template>
         </CardTable>
+
+        <!-- Create Modal -->
+        <Dialog v-model:open="isCreateModalOpen">
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Tambah Kategori</DialogTitle>
+            </DialogHeader>
+            <CategoryForm
+              :is-open="isCreateModalOpen"
+              mode="create"
+              @close="isCreateModalOpen = false"
+              @success="handleModalSuccess"
+            />
+          </DialogContent>
+        </Dialog>
+
+        <!-- Edit Modal -->
+        <Dialog v-model:open="isEditModalOpen">
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Kategori</DialogTitle>
+            </DialogHeader>
+            <CategoryForm
+              v-if="selectedCategory"
+              :is-open="isEditModalOpen"
+              :category="selectedCategory"
+              mode="edit"
+              @close="isEditModalOpen = false"
+              @success="handleModalSuccess"
+            />
+          </DialogContent>
+        </Dialog>
+
+        <!-- Delete Alert Dialog -->
+        <AlertDialog
+          v-model:open="isDeleteAlertOpen"
+          title="Hapus Kategori"
+          description="Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat dibatalkan."
+          confirm-text="Ya, Hapus"
+          cancel-text="Batal"
+          variant="destructive"
+          @confirm="handleDeleteConfirm"
+          @cancel="handleDeleteCancel"
+        />
       </div>
     </SidebarInset>
   </SidebarProvider>

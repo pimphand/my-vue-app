@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import AppSidebar from "@/components/AppSidebar.vue";
 import { useFetch } from "@/stores/fetch";
+import type { Order, OrderItem, Payment, User } from "@/types/order";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -29,98 +30,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit2, Save, X } from "lucide-vue-next";
 import Select from "@/components/Select.vue";
-
-interface OrderItem {
-  id: string;
-  brand: string;
-  name: string;
-  quantity: number;
-  total: number;
-  price: number;
-  returns: number;
-  discount?: number;
-  is_percentage?: boolean;
-}
-
-interface Payment {
-  id: string;
-  method: string;
-  date: string;
-  amount: string;
-  remaining: string;
-  customer: string;
-  collector: string;
-  admin: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: {
-    name: string;
-    display_name: string;
-  };
-}
-
-interface Order {
-  id: number;
-  sales: {
-    id: number;
-    name: string;
-    email: string;
-    role: {
-      name: string;
-      display_name: string;
-    };
-  };
-  customer: {
-    id: string;
-    name: string;
-    phone: string;
-    address: string;
-    store_name: string;
-    store_address: string | null;
-    city: string;
-    state: string;
-    store_photo: string;
-    owner_photo: string;
-  };
-  shipper: {
-    id: number;
-    name: string;
-    email: string;
-    role: {
-      name: string;
-      display_name: string;
-    };
-  } | null;
-  collector: {
-    id: number;
-    name: string;
-    email: string;
-    role: {
-      name: string;
-      display_name: string;
-    };
-  } | null;
-  items: OrderItem[];
-  payments: Payment[];
-  quantity: number;
-  total_price: number;
-  status: string;
-  paid: number;
-  remaining: number;
-  shipped_at: string | null;
-  note: string | null;
-  file: string | null;
-  bukti_pengiriman: string | null;
-  created_at: string;
-  updated_at: string;
-  discount?: number;
-  is_percentage?: boolean;
-  type_discount?: boolean;
-}
 
 const route = useRoute();
 const router = useRouter();

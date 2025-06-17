@@ -8,6 +8,7 @@ import ProductView from '@/views/product/ProductView.vue'
 import Brand from '@/views/product/brand/Brand.vue'
 import OrderView from '@/views/order/OrderView.vue'
 import OrderDetailView from '@/views/order/OrderDetailView.vue'
+import CategoryView from '@/views/product/category/CategoryView.vue'
 
 
 const router = createRouter({
@@ -62,6 +63,12 @@ const router = createRouter({
       path: '/products/create',
       name: 'product-create',
       component: () => import('@/views/product/ProductCreateView.vue'),
+      meta: { public: false }
+    },
+    {
+      path:'/categories',
+      name: 'categories',
+      component: CategoryView,
       meta: { public: false }
     },
     {
