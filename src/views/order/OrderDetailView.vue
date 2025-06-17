@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import AppSidebar from "@/components/AppSidebar.vue";
@@ -30,10 +30,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit2, Save, X } from "lucide-vue-next";
 import Select from "@/components/Select.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const route = useRoute();
 const router = useRouter();
-const { get, put } = useFetch();
+const { get, put, post } = useFetch();
 const order = ref<Order | null>(null);
 const loading = ref(true);
 const isEditing = ref(false);
@@ -61,6 +69,36 @@ const editedItems = ref<{
 
 const isEditingItems = ref(false);
 
+const showAddPayment = ref(false);
+const newPayment = ref({
+  amount: "",
+  method: "",
+});
+
+// Watch for amount changes and validate
+watch(
+  () => newPayment.value.amount,
+  (newValue) => {
+    const amount = Number(newValue);
+    if (amount > firstPaymentAmount.value) {
+      newPayment.value.amount = String(firstPaymentAmount.value);
+    }
+  }
+);
+
+const firstPaymentAmount = computed(() => {
+  if (!order.value?.payments?.length) return 0;
+  const lastPayment = order.value.payments[0];
+  console.log("Last payment:", lastPayment); // Debug log
+  const amount = parseFloat(lastPayment.remaining);
+  return isNaN(amount) ? 0 : amount;
+});
+
+const remainingAfterNewPayment = computed(() => {
+  const currentAmount = Number(newPayment.value.amount) || 0;
+  return firstPaymentAmount.value - currentAmount;
+});
+
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -78,9 +116,7 @@ async function fetchOrderDetail() {
     const response = await get<{ data: Order }>(
       `/admin/orders/${route.params.id}`
     );
-    console.log("Order Response:", response);
     order.value = response.data;
-    console.log("Order Data:", order.value);
   } catch (error) {
     toast.error("Gagal mengambil detail Order!");
     console.error("Error fetching Order detail:", error);
@@ -101,10 +137,6 @@ async function fetchUsers() {
     salesUsers.value = salesResponse.data;
     driverUsers.value = driverResponse.data;
     collectorUsers.value = collectorResponse.data;
-
-    console.log("Sales Users:", salesUsers.value);
-    console.log("Driver Users:", driverUsers.value);
-    console.log("Collector Users:", collectorUsers.value);
   } catch (error) {
     toast.error("Gagal mengambil data pengguna!");
     console.error("Error fetching users:", error);
@@ -113,7 +145,6 @@ async function fetchUsers() {
 
 function startEditing() {
   if (order.value) {
-    console.log("Starting edit with order:", order.value);
     editedOrder.value = {
       sales_id: order.value.sales.id,
       shipper_id: order.value.shipper?.id ?? 0,
@@ -122,7 +153,6 @@ function startEditing() {
       type_discount: order.value.type_discount,
       type: "edit-customer",
     };
-    console.log("Edited order set to:", editedOrder.value);
     isEditing.value = true;
   }
 }
@@ -292,6 +322,39 @@ function calculateOrderTotal() {
 
   return total;
 }
+
+const addPayment = async () => {
+  if (!order.value) return;
+
+  const amount = Number(newPayment.value.amount);
+  const maxAmount = firstPaymentAmount.value;
+
+  if (amount > maxAmount) {
+    toast.error(
+      `Jumlah pembayaran tidak boleh lebih dari ${formatCurrency(maxAmount)}`
+    );
+    return;
+  }
+
+  try {
+    const response = await post(`/admin/orders/${order.value.id}/payments`, {
+      amount: amount,
+      method: newPayment.value.method,
+    });
+
+    // Refresh order data
+    await fetchOrderDetail();
+    showAddPayment.value = false;
+    newPayment.value = {
+      amount: "",
+      method: "",
+    };
+    toast.success("Pembayaran berhasil ditambahkan!");
+  } catch (error) {
+    toast.error("Gagal menambahkan pembayaran!");
+    console.error("Error adding payment:", error);
+  }
+};
 
 onMounted(async () => {
   await Promise.all([fetchOrderDetail(), fetchUsers()]);
@@ -639,7 +702,16 @@ onMounted(async () => {
 
           <!-- Payment History -->
           <div class="bg-white p-4 rounded-lg shadow">
-            <h3 class="font-semibold mb-2">Payment History</h3>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold">Payment History</h3>
+              <Button
+                variant="outline"
+                @click="showAddPayment = true"
+                v-if="order?.status === 'Di Proses'"
+              >
+                Tambah Pembayaran
+              </Button>
+            </div>
             <div class="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -669,6 +741,58 @@ onMounted(async () => {
               </Table>
             </div>
           </div>
+
+          <!-- Add Payment Dialog -->
+          <Dialog v-model:open="showAddPayment">
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tambah Pembayaran</DialogTitle>
+              </DialogHeader>
+              <div class="space-y-4 py-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium">Jumlah Pembayaran</label>
+                  <div class="text-sm text-gray-500 mb-2">
+                    Maksimal pembayaran:
+                    {{ formatCurrency(firstPaymentAmount) }}
+                  </div>
+                  <input
+                    v-model="newPayment.amount"
+                    type="number"
+                    class="w-full px-3 py-2 border rounded-md"
+                    placeholder="Masukkan jumlah pembayaran"
+                    :max="firstPaymentAmount"
+                    min="0"
+                    @input="(e: Event) => {
+                      const target = e.target as HTMLInputElement;
+                      const value = Number(target.value);
+                      if (value > firstPaymentAmount) {
+                        newPayment.amount = String(firstPaymentAmount);
+                      }
+                    }"
+                  />
+                  <div class="text-sm text-gray-500 mt-2">
+                    Sisa pembayaran:
+                    {{ formatCurrency(remainingAfterNewPayment) }}
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium">Metode Pembayaran</label>
+                  <input
+                    v-model="newPayment.method"
+                    type="text"
+                    class="w-full px-3 py-2 border rounded-md"
+                    placeholder="Masukkan metode pembayaran"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" @click="showAddPayment = false">
+                  Batal
+                </Button>
+                <Button @click="addPayment"> Simpan </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </SidebarInset>
