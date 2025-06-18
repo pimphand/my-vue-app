@@ -707,7 +707,7 @@ onMounted(async () => {
               <Button
                 variant="outline"
                 @click="showAddPayment = true"
-                v-if="order?.status === 'Di Proses'"
+                v-if="order?.status === 'Di Proses' && firstPaymentAmount > 0"
               >
                 Tambah Pembayaran
               </Button>
