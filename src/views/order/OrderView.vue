@@ -4,12 +4,7 @@ import { toast } from "vue-sonner";
 import { useRouter } from "vue-router";
 import AppSidebar from "@/components/AppSidebar.vue";
 import { useFetch } from "@/stores/fetch";
-import type {
-  Order,
-  OrderItem,
-  Payment,
-  PaginatedResponse,
-} from "@/types/order";
+import type { Order, PaginatedResponse } from "@/types/order";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,27 +19,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
-import { FolderKanban, PencilIcon, Trash2, Eye } from "lucide-vue-next";
+import { Eye } from "lucide-vue-next";
 import ButtonTooltip from "@/components/button/ButtonTooltip.vue";
 import CardTable from "@/components/CardTable.vue";
-import { Badge } from "@/components/ui/badge";
-import Accordion from "@/components/Accordion.vue";
-import Modal from "@/components/Modal.vue";
 
 const columns = [
   { key: "index", label: "#", width: "100px" } as const,
@@ -76,7 +54,7 @@ const currentPage = ref(1);
 const totalItems = ref(0);
 const to = ref(1);
 const searchQueries = ref<Record<string, string>>({});
-const { get, del } = useFetch();
+const { get } = useFetch();
 
 const viewOrderDetail = (order: Order) => {
   router.push(`/orders/${order.id}`);
